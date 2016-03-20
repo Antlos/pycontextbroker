@@ -22,11 +22,17 @@ class ContextBrokerClient(object):
     def get_version_data(self):
         return requests.get(self.cb_address + '/version').json()
 
+    def get_orion_version_data(self):
+        orion_data = self.get_version_data().get('orion')
+        if not orion_data:
+            logger.exception("Failed to gather Orion Context Broker version data")
+        return orion_data
+
     def get_version(self):
-        return self.get_version_data().get('orion').get('version')
+        return self.get_orion_version_data().get('version')
 
     def get_uptime(self):
-        return self.get_version_data().get('orion').get('uptime')
+        return self.get_orion_version_data().get('uptime')
 
     def create_entity(self, entity_type, entity_id, attributes=None):
         data = {
@@ -47,6 +53,10 @@ class ContextBrokerClient(object):
         return requests.get(self.cb_entities_api + endpoint).json()
 
     def get_attribute_value(self, entity_type, entity_id, attribute_name):
+        if self.get_entity(entity_type, entity_id).get('contextElement') is None:
+            return None
+        if self.get_entity(entity_type, entity_id).get('contextElement').get('attributes') is None:
+            return None
         for attribute in self.get_entity(entity_type, entity_id).get('contextElement').get('attributes'):
             if attribute['name'] == attribute_name:
                 return attribute.get('value')
