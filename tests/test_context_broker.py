@@ -1,4 +1,4 @@
-from pycontextbroker import ContextBrokerClient
+from pycontextbroker.pycontextbroker import ContextBrokerClient
 import unittest
 
 
