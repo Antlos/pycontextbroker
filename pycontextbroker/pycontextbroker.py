@@ -19,6 +19,7 @@ class ContextBrokerClient(object):
             logger.exception("Failed to initialize ContextBroker client: "
                              "connection refused, please check provided IP and PORT")
 
+    # Context Broker
     def get_version_data(self):
         return requests.get(self.cb_address + '/version').json()
 
@@ -34,6 +35,8 @@ class ContextBrokerClient(object):
     def get_uptime(self):
         return self.get_orion_version_data().get('uptime')
 
+    # Entities #
+    # Create
     def create_entity(self, entity_type, entity_id, attributes=None):
         data = {
             "id": entity_id,
@@ -44,14 +47,45 @@ class ContextBrokerClient(object):
             # [{"name": "number", "type": "integer", "value": "0"}]
             data.update({"attributes": attributes})
 
-        return requests.post(self.cb_entities_api,
-                             data=json.dumps(data),
-                             headers={'Content-Type': 'application/json'}).json()
+        return requests.post(
+            self.cb_entities_api,
+            data=json.dumps(data),
+            headers={'Content-Type': 'application/json'}
+        ).json()
 
+    # Read
     def get_entity(self, entity_type, entity_id):
         endpoint = '/type/{}/id/{}'.format(entity_type, entity_id)
         return requests.get(self.cb_entities_api + endpoint).json()
 
+    # Delete
+    def delete_entity(self, entity_type, entity_id):
+        endpoint = '/type/{}/id/{}'.format(entity_type, entity_id)
+        return requests.delete(self.cb_entities_api + endpoint).json()
+
+    # Entity's Attributes #
+    # Create
+    def create_attribute(self, entity_type, entity_id, attribute_name, attribute_value):
+        if self.get_attribute_value(entity_type, entity_id, attribute_name) is not None:
+            return None
+
+        endpoint = '/type/{}/id/{}'.format(entity_type, entity_id)
+        data = {
+            "attributes": [
+                {
+                    "name": attribute_name,
+                    "type": "integer",
+                    "value": attribute_value
+                }
+            ]
+        }
+        return requests.post(
+            self.cb_entities_api + endpoint,
+            data=json.dumps(data),
+            headers={'Content-Type': 'application/json'}
+        ).json()
+
+    # Read
     def get_attribute_value(self, entity_type, entity_id, attribute_name):
         if self.get_entity(entity_type, entity_id).get('contextElement') is None:
             return None
@@ -62,19 +96,25 @@ class ContextBrokerClient(object):
                 return attribute.get('value')
         return None
 
+    # Update
     def update_attribute_value(self, entity_type, entity_id, attribute_name, attribute_value):
-        data = {
-            "value": attribute_value
-        }
+        # create attribute if it was never created
+        if self.get_attribute_value(entity_type, entity_id, attribute_name) is None:
+            return self.create_attribute(entity_type, entity_id, attribute_name, attribute_value)
+
+        data = {"value": attribute_value}
         endpoint = '/type/{}/id/{}/attributes/{}'.format(entity_type, entity_id, attribute_name)
         return requests.put(self.cb_entities_api + endpoint,
                             data=json.dumps(data),
                             headers={'Content-Type': 'application/json'}).json()
 
-    def delete_entity(self, entity_type, entity_id):
-        endpoint = '/type/{}/id/{}'.format(entity_type, entity_id)
-        return requests.delete(self.cb_entities_api + endpoint).json()
+    # Delete
+    def delete_attribute(self, entity_type, entity_id, attribute_name):
+        endpoint = '/type/{}/id/{}/attributes/{}'.format(entity_type, entity_id, attribute_name)
+        return requests.delete(self.cb_entities_api + endpoint,
+                               headers={'Content-Type': 'application/json'}).json()
 
+    # Subscriptions #
     def subscribe_on_attribute_change(self, entity_type, entity_id, attribute_name, subscriber_endpoint):
         subscription_data = {
             "entities": [
