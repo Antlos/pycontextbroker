@@ -1,8 +1,9 @@
 from distutils.core import setup
+
 setup(
     name='pycontextbroker',
     packages=['pycontextbroker'],
-    version='0.1.3',
+    version='0.1.4',
     description='An opensource library that makes communications with Orion Context Broker smooth, easy and pythonic',
     author='Leonardo Ruffin',
     author_email='leonardo.ruffin@antlos.com',
