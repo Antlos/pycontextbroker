@@ -2,4 +2,7 @@
 setup.cfg
 setup.py
 pycontextbroker/__init__.py
+pycontextbroker/cb_attribute.py
+pycontextbroker/cb_entity.py
+pycontextbroker/cb_subscription.py
 pycontextbroker/pycontextbroker.py
