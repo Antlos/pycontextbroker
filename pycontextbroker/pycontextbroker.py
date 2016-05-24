@@ -6,8 +6,8 @@ logger = logging.getLogger(__name__)
 
 
 class ContextBrokerEntity(object):
-    def __init__(self, entity_end_point):
-        self.cb_entities_api = entity_end_point
+    def __init__(self, cb_address):
+        self.cb_entities_api = cb_address + '/v1/contextEntities'
 
     def create(self, entity_type, entity_id, attributes=None):
         data = {
@@ -37,9 +37,9 @@ class ContextBrokerEntity(object):
 
 
 class ContextBrokerAttribute(object):
-    def __init__(self, entity_end_point):
-        self.cb_entities_api = entity_end_point
-        self.entity = ContextBrokerEntity(entity_end_point)
+    def __init__(self, cb_address):
+        self.cb_entities_api = cb_address + '/v1/contextEntities'
+        self.entity = ContextBrokerEntity(cb_address)
 
     def get_value(self, entity_type, entity_id, attribute_name):
         if self.entity.get(entity_type, entity_id).get('contextElement') is None:
@@ -89,10 +89,10 @@ class ContextBrokerAttribute(object):
 
 
 class ContextBrokerSubscription(object):
-    def __init__(self, subscription_endpoint, subscription_v2_endpoint, unsubscription_endpoint):
-        self.cb_subscription_api = subscription_endpoint
-        self.cb_subscription_v2_api = subscription_v2_endpoint
-        self.cb_unsubscription_api = unsubscription_endpoint
+    def __init__(self, cb_address):
+        self.cb_subscription_api = cb_address + '/v1/subscribeContext'
+        self.cb_subscription_v2_api = cb_address + '/v2/subscriptions'
+        self.cb_unsubscription_api = cb_address + '/v1/unsubscribeContext'
 
     def all(self):
         return requests.get(self.cb_subscription_v2_api).json()
@@ -137,18 +137,11 @@ class ContextBrokerSubscription(object):
 
 class ContextBrokerClient(object):
 
-    def __init__(self, ip, port, version='v1'):
+    def __init__(self, ip, port):
         self.cb_address = 'http://{}:{}'.format(ip, port)
-        self.cb_main_api = self.cb_address + '/' + version
-        self.cb_entities_api = self.cb_main_api + '/contextEntities'
-
-        self.cb_subscription_api = self.cb_main_api + '/subscribeContext'
-        self.cb_subscription_v2_api = self.cb_address + '/v2/subscriptions'
-        self.cb_unsubscription_api = self.cb_main_api + '/unsubscribeContext'
-
-        self.entity = ContextBrokerEntity(self.cb_entities_api)
-        self.attribute = ContextBrokerAttribute(self.cb_entities_api)
-        self.subscription = ContextBrokerSubscription(self.cb_subscription_api, self.cb_subscription_v2_api, self.cb_unsubscription_api)
+        self.entity = ContextBrokerEntity(self.cb_address)
+        self.attribute = ContextBrokerAttribute(self.cb_address)
+        self.subscription = ContextBrokerSubscription(self.cb_address)
 
         try:
             requests.get(self.cb_address)
