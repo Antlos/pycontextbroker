@@ -118,5 +118,40 @@ class PycontextbrokerTestCase(unittest.TestCase):
         self.assertIn('throttling', response['subscribeResponse'])
         self.assertIn('duration', response['subscribeResponse'])
 
+    def test_get_all_subscriptions(self):
+        response = self.cbc.subscription.all()
+        self.assertIsInstance(response, list)
+        self.assertTrue(response)
+        self.assertIn('status', response[0])
+        self.assertIn('expires', response[0])
+        self.assertIn('id', response[0])
+        self.assertIn('subject', response[0])
+        self.assertIn('entities', response[0].get('subject'))
+        self.assertIn('type', response[0].get('subject').get('entities')[0])
+        self.assertIn('id', response[0].get('subject').get('entities')[0])
+        self.assertIn('condition', response[0].get('subject'))
+        self.assertIn('attributes', response[0].get('subject').get('condition'))
+        self.assertIn('notification', response[0])
+        self.assertIn('callback', response[0].get('notification'))
+        self.assertIn('attributes', response[0].get('notification'))
+
+    def test_unsubscribe_no_subcription_with_such_id(self):
+        response = self.cbc.subscription.unsubscribe("###")
+        self.assertEqual(response.get('statusCode').get('code'), '400')
+        self.assertEqual(response.get('statusCode').get('reasonPhrase'), 'Bad Request')
+
+    def test_unsubscribe(self):
+        subscriptions = self.cbc.subscription.all()
+        initial_num_subsciptions = len(subscriptions)
+        self.assertTrue(self.cbc.subscription.all())
+        subscription_id = self.cbc.subscription.all()[0].get('id')
+        self.assertIsNotNone(subscription_id)
+        response = self.cbc.subscription.unsubscribe(subscription_id)
+        self.assertEqual(response.get('subscriptionId'), subscription_id)
+        self.assertIn('statusCode', response)
+        self.assertEqual(response.get('statusCode').get('code'), '200')
+        final_num_subscriptions = len(self.cbc.subscription.all())
+        self.assertEqual(initial_num_subsciptions, final_num_subscriptions + 1)
+
 if __name__ == '__main__':
     unittest.main()

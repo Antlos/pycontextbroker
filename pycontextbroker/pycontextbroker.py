@@ -89,8 +89,13 @@ class ContextBrokerAttribute(object):
 
 
 class ContextBrokerSubscription(object):
-    def __init__(self, subscription_end_point):
-        self.cb_subscription_api = subscription_end_point
+    def __init__(self, subscription_endpoint, subscription_v2_endpoint, unsubscription_endpoint):
+        self.cb_subscription_api = subscription_endpoint
+        self.cb_subscription_v2_api = subscription_v2_endpoint
+        self.cb_unsubscription_api = unsubscription_endpoint
+
+    def all(self):
+        return requests.get(self.cb_subscription_v2_api).json()
 
     def on_change(self, entity_type, entity_id, attribute_name, subscriber_endpoint):
         subscription_data = {
@@ -121,6 +126,14 @@ class ContextBrokerSubscription(object):
                              data=json.dumps(subscription_data),
                              headers={'Content-Type': 'application/json'}).json()
 
+    def unsubscribe(self, subscription_id):
+        data = {
+            "subscriptionId": subscription_id
+        }
+        return requests.post(self.cb_unsubscription_api,
+                             data=json.dumps(data),
+                             headers={'Content-Type': 'application/json'}).json()
+
 
 class ContextBrokerClient(object):
 
@@ -128,10 +141,14 @@ class ContextBrokerClient(object):
         self.cb_address = 'http://{}:{}'.format(ip, port)
         self.cb_main_api = self.cb_address + '/' + version
         self.cb_entities_api = self.cb_main_api + '/contextEntities'
+
         self.cb_subscription_api = self.cb_main_api + '/subscribeContext'
+        self.cb_subscription_v2_api = self.cb_address + '/v2/subscriptions'
+        self.cb_unsubscription_api = self.cb_main_api + '/unsubscribeContext'
+
         self.entity = ContextBrokerEntity(self.cb_entities_api)
         self.attribute = ContextBrokerAttribute(self.cb_entities_api)
-        self.subscription = ContextBrokerSubscription(self.cb_subscription_api)
+        self.subscription = ContextBrokerSubscription(self.cb_subscription_api, self.cb_subscription_v2_api, self.cb_unsubscription_api)
 
         try:
             requests.get(self.cb_address)
