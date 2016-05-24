@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 class ContextBrokerEntity(object):
     def __init__(self, cb_address):
-        self.cb_entities_api = cb_address + '/v1/contextEntities'
+        self.cb_entity_endpoint = cb_address + '/v1/contextEntities'
 
     def create(self, entity_type, entity_id, attributes=None):
         data = {
@@ -20,25 +20,25 @@ class ContextBrokerEntity(object):
             data.update({"attributes": attributes})
 
         return requests.post(
-            self.cb_entities_api,
+            self.cb_entity_endpoint,
             data=json.dumps(data),
             headers={'Content-Type': 'application/json'}
         ).json()
 
     # Read
     def get(self, entity_type, entity_id):
-        endpoint = '/type/{}/id/{}'.format(entity_type, entity_id)
-        return requests.get(self.cb_entities_api + endpoint).json()
+        endpoint = '{}/type/{}/id/{}'.format(self.cb_entity_endpoint, entity_type, entity_id)
+        return requests.get(endpoint).json()
 
     # Delete
     def delete(self, entity_type, entity_id):
-        endpoint = '/type/{}/id/{}'.format(entity_type, entity_id)
-        return requests.delete(self.cb_entities_api + endpoint).json()
+        endpoint = '{}/type/{}/id/{}'.format(self.cb_entity_endpoint, entity_type, entity_id)
+        return requests.delete(endpoint).json()
 
 
 class ContextBrokerAttribute(object):
     def __init__(self, cb_address):
-        self.cb_entities_api = cb_address + '/v1/contextEntities'
+        self.cb_entity_endpoint = cb_address + '/v1/contextEntities'
         self.entity = ContextBrokerEntity(cb_address)
 
     def get_value(self, entity_type, entity_id, attribute_name):
@@ -55,7 +55,7 @@ class ContextBrokerAttribute(object):
         if self.get_value(entity_type, entity_id, attribute_name) is not None:
             return None
 
-        endpoint = '/type/{}/id/{}'.format(entity_type, entity_id)
+        endpoint = '{}/type/{}/id/{}'.format(self.cb_entity_endpoint, entity_type, entity_id)
         data = {
             "attributes": [
                 {
@@ -66,7 +66,7 @@ class ContextBrokerAttribute(object):
             ]
         }
         return requests.post(
-            self.cb_entities_api + endpoint,
+            endpoint,
             data=json.dumps(data),
             headers={'Content-Type': 'application/json'}
         ).json()
@@ -77,25 +77,33 @@ class ContextBrokerAttribute(object):
             return self.create(entity_type, entity_id, attribute_name, attribute_value)
 
         data = {"value": attribute_value}
-        endpoint = '/type/{}/id/{}/attributes/{}'.format(entity_type, entity_id, attribute_name)
-        return requests.put(self.cb_entities_api + endpoint,
+        endpoint = '{}/type/{}/id/{}/attributes/{}'.format(
+            self.cb_entity_endpoint,
+            entity_type,
+            entity_id,
+            attribute_name
+        )
+        return requests.put(endpoint,
                             data=json.dumps(data),
                             headers={'Content-Type': 'application/json'}).json()
 
     def delete(self, entity_type, entity_id, attribute_name):
-        endpoint = '/type/{}/id/{}/attributes/{}'.format(entity_type, entity_id, attribute_name)
-        return requests.delete(self.cb_entities_api + endpoint,
-                               headers={'Content-Type': 'application/json'}).json()
+        endpoint = '{}/type/{}/id/{}/attributes/{}'.format(
+            self.cb_entity_endpoint,
+            entity_type,
+            entity_id,
+            attribute_name)
+        return requests.delete(endpoint, headers={'Content-Type': 'application/json'}).json()
 
 
 class ContextBrokerSubscription(object):
     def __init__(self, cb_address):
-        self.cb_subscription_api = cb_address + '/v1/subscribeContext'
-        self.cb_subscription_v2_api = cb_address + '/v2/subscriptions'
-        self.cb_unsubscription_api = cb_address + '/v1/unsubscribeContext'
+        self.cb_subscription_endpoint = cb_address + '/v1/subscribeContext'
+        self.cb_subscriptions_endpoint_v2 = cb_address + '/v2/subscriptions'
+        self.cb_unsubscription_endpoint = cb_address + '/v1/unsubscribeContext'
 
     def all(self):
-        return requests.get(self.cb_subscription_v2_api).json()
+        return requests.get(self.cb_subscriptions_endpoint_v2).json()
 
     def on_change(self, entity_type, entity_id, attribute_name, subscriber_endpoint):
         subscription_data = {
@@ -122,7 +130,7 @@ class ContextBrokerSubscription(object):
             "throttling": "PT5S"
         }
 
-        return requests.post(self.cb_subscription_api,
+        return requests.post(self.cb_subscription_endpoint,
                              data=json.dumps(subscription_data),
                              headers={'Content-Type': 'application/json'}).json()
 
@@ -130,7 +138,7 @@ class ContextBrokerSubscription(object):
         data = {
             "subscriptionId": subscription_id
         }
-        return requests.post(self.cb_unsubscription_api,
+        return requests.post(self.cb_unsubscription_endpoint,
                              data=json.dumps(data),
                              headers={'Content-Type': 'application/json'}).json()
 
@@ -146,8 +154,10 @@ class ContextBrokerClient(object):
         try:
             requests.get(self.cb_address)
         except:
-            logger.exception("Failed to initialize ContextBroker client: "
-                             "connection refused, please check provided IP and PORT")
+            logger.exception(
+                "Failed to initialize ContextBroker client: "
+                "connection refused, please check provided IP and PORT"
+            )
 
     # Context Broker
     def get_version_data(self):
