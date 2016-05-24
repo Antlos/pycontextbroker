@@ -55,7 +55,7 @@ class PycontextbrokerTestCase(unittest.TestCase):
         self.assertIn('isPattern', response)
         self.assertEquals(response.get('isPattern'), 'false')
 
-    def test_get_entity(self):
+    def test_get_entity_with_attribute(self):
         response = self.cbc.get_entity("TestSearch", "test_search_1")
         self.assertIsNotNone(response)
         self.assertIn('contextElement', response)
@@ -63,6 +63,8 @@ class PycontextbrokerTestCase(unittest.TestCase):
         self.assertEquals('false', response.get('contextElement').get('isPattern'))
         self.assertEquals('test_search_1', response.get('contextElement').get('id'))
         self.assertEquals('TestSearch', response.get('contextElement').get('type'))
+
+    def test_get_entitiy_without_attributes(self):
         response = self.cbc.get_entity("TestSearch", "test_search_2")
         self.assertIsNotNone(response)
         self.assertIn('contextElement', response)
@@ -81,6 +83,20 @@ class PycontextbrokerTestCase(unittest.TestCase):
         self.cbc.update_attribute_value("TestSearch", "test_search_1", "number", 1)
         self.assertEqual('1', self.cbc.get_attribute_value("TestSearch", "test_search_1", "number"))
 
+    def test_update_missing_attribute_value(self):
+        self.cbc.update_attribute_value("TestSearch", "test_search_2", "number", 10)
+        self.assertEqual('10', self.cbc.get_attribute_value("TestSearch", "test_search_2", "number"))
+
+    def test_create_attribute(self):
+        self.cbc.create_attribute("TestSearch", "test_search_2", "new_attribute", 33)
+        self.assertEqual('33', self.cbc.get_attribute_value("TestSearch", "test_search_2", "new_attribute"))
+
+    def test_delete_attribute_attribute_value(self):
+        self.cbc.create_attribute("TestSearch", "test_search_2", "attribute_to_be_deleted", 66)
+        self.assertEqual('66', self.cbc.get_attribute_value("TestSearch", "test_search_2", "attribute_to_be_deleted"))
+        self.cbc.delete_attribute("TestSearch", "test_search_2", "attribute_to_be_deleted")
+        self.assertIsNone(self.cbc.get_attribute_value("TestSearch", "test_search_2", "attribute_to_be_deleted"))
+
     def test_delete_entity(self):
         if self.cbc.get_entity("TestSearch", "test_search_1")['statusCode']['code'] == '404':
             self.cbc.create_entity("TestSearch", "test_search_1", attributes=[{"name": "number", "type": "integer", "value": "0"}])
@@ -93,7 +109,7 @@ class PycontextbrokerTestCase(unittest.TestCase):
         self.assertEquals(self.cbc.get_entity("TestSearch", "test_search_2")['statusCode']['code'], '404')
 
     def test_subscribe_on_attribute_change(self):
-        response = self.cbc.subscribe_on_attribute_change("Search", "search_1", "number", "http://localhost:3030/search_number")
+        response = self.cbc.subscribe_on_attribute_change("TestSearch", "test_search_1", "number", "http://localhost:3030/search_number")
         self.assertIn('subscribeResponse', response)
         self.assertIn('subscriptionId', response['subscribeResponse'])
         self.assertIn('throttling', response['subscribeResponse'])
