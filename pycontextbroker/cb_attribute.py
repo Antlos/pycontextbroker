@@ -10,16 +10,17 @@ class ContextBrokerAttribute(object):
         self.entity = ContextBrokerEntity(cb_address)
 
     def get_value(self, entity_type, entity_id, attribute_name):
-        if self.entity.get(entity_type, entity_id).get('contextElement') is None:
+        if self.entity.get(entity_type, entity_id).get('contextElement') is None or \
+           self.entity.get(entity_type, entity_id).get('contextElement').get('attributes') is None:
             return None
-        if self.entity.get(entity_type, entity_id).get('contextElement').get('attributes') is None:
-            return None
-        for attribute in self.entity.get(entity_type, entity_id).get('contextElement').get('attributes'):
-            if attribute['name'] == attribute_name:
-                return attribute.get('value')
-        return None
+
+        response_attributes = self.entity.get(entity_type, entity_id).get('contextElement').get('attributes')
+        attributes = dict([(a.get('name'), a.get('value')) for a in response_attributes])
+
+        return attributes.get(attribute_name)
 
     def create(self, entity_type, entity_id, attribute_name, attribute_value):
+        # Check if entity already exists
         if self.get_value(entity_type, entity_id, attribute_name) is not None:
             return None
 
