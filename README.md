@@ -33,6 +33,7 @@ cbc.entity.create("Entity", "IdTwo", attributes=[{"name": "number", "type": "int
 cbc.entity.get("Entity", "IdTwo")  # {'contextElement': {'attributes': [{'value': '1', 'type': 'integer', 'name': 'number'}, {'value': '1', 'type': 'integer', 'name': 'number'}], 'isPattern': 'false', 'id': 'test_search_2', 'type': 'TestSearch'}, 'statusCode': {'code': '200', 'reasonPhrase': 'OK'}}
 
 # Attributes
+cbc.attribute.get("Entity", "IdTwo", "number")  # {'contextElement': {'isPattern': 'false', 'type': 'Entity', 'attributes': [{'type': 'integer', 'name': 'number', 'value': '1'}], 'id': 'IdTwo'}, 'statusCode': {'code': '200', 'reasonPhrase': 'OK'}}
 cbc.attribute.get_value("Entity", "IdTwo", "number")  # "1"
 cbc.attribute.update_value("Entity", "IdTwo", "number", 2)
 cbc.attribute.get_value("Entity", "IdTwo", "number")  # "2"
