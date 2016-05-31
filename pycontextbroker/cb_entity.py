@@ -13,7 +13,7 @@ class ContextBrokerEntity(object):
         }
 
         if attributes:
-            # [{"name": "number", "type": "integer", "value": "0"}]
+            # [{"name": "number", "type": "integer", "value": "0", "metadatas": [{"name": "timestamp", "type": "string", "value": "2016-05-30T15:30:00Z"}]}]
             data.update({"attributes": attributes})
 
         return requests.post(
